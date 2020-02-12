@@ -4,6 +4,8 @@
 
 This is a custom component to use sonos speakers with the notifier plattform of [Homeassistant](https://home-assistant.io) instead of writing custom scripts. E.g. it enables us to user the [alert functionality](https://www.home-assistant.io/integrations/alert/)
 
+By the way: It is using the first tts plattform that is found - I'm currently using VOICERSS (and it's not tested with any other tts plattform)
+
 # Installation and Configuration
 
 Use copy the repo to the `custom_components` folder of your config folder. See also [https://developers.home-assistant.io/docs/en/creating_component_loading.html]
