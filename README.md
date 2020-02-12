@@ -17,6 +17,7 @@ notify:
   - name: Desk
     platform: sonos_tts
     entities: media_player.desk
+    tts: google_translate
   - name: Bedroom
     platform: sonos_tts
     entities: media_player.bedroom

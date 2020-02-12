@@ -15,6 +15,8 @@ DOMAIN_SONOS = "sonos"
 DOMAIN_MEDIA_PLAYER = "media_player"
 DOMAIN_TTS = "tts"
 
+CONF_TTS = 'tts'
+
 COMMAND_JOIN = "join"
 COMMAND_UNJOIN = "unjoin"
 COMMAND_RESTORE = "restore"
@@ -22,8 +24,9 @@ COMMAND_RESTORE = "restore"
 ATTR_MASTER = "master"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {vol.Optional(CONF_ENTITY_ID): cv.entity_id,
-     vol.Optional(CONF_ENTITIES): cv.entity_ids}
+    {vol.Required(CONF_ENTITIES): cv.entity_ids,
+     vol.Optional(CONF_TTS): cv.string
+     }
 )
 
 ATTR_VOLUME = "volume_level"
@@ -31,9 +34,10 @@ ATTR_VOLUME = "volume_level"
 
 def get_service(hass, config, discovery_info=None):
     """Get the Command Line notification service."""
-    entities = config[CONF_ENTITIES]
+    entities = config.get(CONF_ENTITIES)
+    tts_platform = config.get(CONF_TTS)
 
-    return SonosTTSNotificationService(hass, config[CONF_NAME], entities)
+    return SonosTTSNotificationService(hass, config[CONF_NAME], entities, tts_platform)
 
 
 class SonosTTSNotificationService(BaseNotificationService):
@@ -53,7 +57,7 @@ class SonosTTSNotificationService(BaseNotificationService):
         _LOGGER.debug("Debug State %s (%s) from %s to %s",
                       entity_id, self.speaking, old_state, new_state)
 
-    def __init__(self, hass, name, entities):
+    def __init__(self, hass, name, entities, tts_platform):
         """Initialize the service."""
 
         self.hass = hass
@@ -61,10 +65,17 @@ class SonosTTSNotificationService(BaseNotificationService):
         self.entities = entities
 
         tts_services = hass.services.services.get(DOMAIN_TTS)
-        self.tts_plattform = list(tts_services.keys())[0]
+
+        _LOGGER.debug("Services %s", tts_services)
+        _LOGGER.debug("[%s] for tts platform %s is found = %s", name,
+                      tts_platform, tts_platform in tts_services)
+        if tts_platform is not None and tts_platform in tts_services:
+            self.tts_platform = tts_platform
+        else:
+            self.tts_platform = list(tts_services.keys())[0]
 
         _LOGGER.debug("Setting up %s for tts %s with entities %s",
-                      self.name, self.tts_plattform, self.entities)
+                      self.name, self.tts_platform, self.entities)
 
         self.speaking = False
         track_state_change(
@@ -102,6 +113,7 @@ class SonosTTSNotificationService(BaseNotificationService):
 
         self.speaking = True
         self.master = self.entities[0]
-        _LOGGER.debug("Playing TTS %s on %s", message, self.master)
+        _LOGGER.debug("Playing TTS %s on %s with %s",
+                      message, self.master, self.tts_platform)
         self.hass.services.call(
-            DOMAIN_TTS, self.tts_plattform, {CONF_ENTITY_ID: self.entities[0], "message": message}, True)
+            DOMAIN_TTS, self.tts_platform, {CONF_ENTITY_ID: self.entities[0], "message": message}, True)
